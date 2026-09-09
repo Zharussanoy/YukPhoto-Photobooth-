@@ -1,4 +1,5 @@
 // Clean High-Resolution Canvas Renderer with 2-Section Independent Frame Styling (Color + Pattern)
+// Supports Aesthetic Washi Tape & Watermark Positions (Bottom / Top / Side)
 
 import { PHOTO_FILTERS, FRAME_COLORS, FRAME_PATTERNS } from './filters';
 
@@ -10,6 +11,27 @@ function loadImage(src) {
     img.onerror = (err) => reject(err);
     img.src = src;
   });
+}
+
+function getLuminance(hex) {
+  if (!hex) return 0;
+  const cleanHex = hex.replace('#', '');
+  const r = parseInt(cleanHex.substring(0, 2), 16) || 0;
+  const g = parseInt(cleanHex.substring(2, 4), 16) || 0;
+  const b = parseInt(cleanHex.substring(4, 6), 16) || 0;
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
+
+function drawWashiTape(ctx, cx, cy, width, height, angleDeg) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate((angleDeg * Math.PI) / 180);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+  ctx.fillRect(-width / 2, -height / 2, width, height);
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(-width / 2, -height / 2, width, height);
+  ctx.restore();
 }
 
 function drawImageCover(ctx, img, x, y, width, height, radius = 8) {
@@ -48,11 +70,11 @@ function drawImageCover(ctx, img, x, y, width, height, radius = 8) {
 }
 
 /**
- * Draw 2-Section Frame: Base Color + Pattern Overlay on top
+ * Draw 2-Section Frame: Base Color (Preset or Custom) + Pattern Overlay on top
  */
 function drawFrameBackground(ctx, width, height, frameColor, patternId) {
   // 1. Fill Base Color
-  ctx.fillStyle = frameColor.hex || '#0B1120';
+  ctx.fillStyle = frameColor.hex || '#0F172A';
   ctx.fillRect(0, 0, width, height);
 
   const isLight = frameColor.isLight;
@@ -61,7 +83,7 @@ function drawFrameBackground(ctx, width, height, frameColor, patternId) {
   if (patternId === 'checkered') {
     const gridSize = 32;
     ctx.save();
-    ctx.strokeStyle = isLight ? 'rgba(15, 23, 42, 0.05)' : 'rgba(255, 255, 255, 0.08)';
+    ctx.strokeStyle = isLight ? 'rgba(15, 23, 42, 0.06)' : 'rgba(255, 255, 255, 0.08)';
     ctx.lineWidth = 1.5;
 
     for (let x = 0; x < width; x += gridSize) {
@@ -129,7 +151,7 @@ function drawFrameBackground(ctx, width, height, frameColor, patternId) {
     const grad = ctx.createLinearGradient(0, 0, 0, height);
     if (isLight) {
       grad.addColorStop(0, 'rgba(255, 255, 255, 0)');
-      grad.addColorStop(0.6, 'rgba(37, 99, 235, 0.05)');
+      grad.addColorStop(0.6, 'rgba(37, 99, 235, 0.06)');
       grad.addColorStop(1, 'rgba(37, 99, 235, 0.18)');
     } else {
       grad.addColorStop(0, 'rgba(0, 0, 0, 0)');
@@ -156,44 +178,46 @@ export async function renderPhotostrip({
   layout,
   filterId,
   frameColorId = 'navy',
+  customColor = null,
   framePatternId = 'none',
-  // Backward compatibility in case called with motifId:
+  showTape = true,
+  watermarkPosition = 'bottom', // 'bottom' | 'top' | 'side'
+  // Backward compatibility:
   motifId,
   caption = '',
   dateString = '',
-  stamps = [],
 }) {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
 
-  // Resolve Frame Color:
-  let resolvedColorId = frameColorId;
+  // Resolve Frame Color (Preset or Custom):
+  let frameColor;
+  if (frameColorId === 'custom' && customColor) {
+    const isLight = getLuminance(customColor) > 0.55;
+    frameColor = {
+      id: 'custom',
+      name: 'Custom',
+      hex: customColor,
+      isLight,
+      text: isLight ? '#0F172A' : '#FFFFFF',
+      subtext: isLight ? '#475569' : '#94A3B8',
+      border: isLight ? 'rgba(15, 23, 42, 0.15)' : 'rgba(255, 255, 255, 0.18)',
+    };
+  } else {
+    frameColor = FRAME_COLORS.find((c) => c.id === frameColorId) || FRAME_COLORS[4]; // default navy
+  }
+
   let resolvedPatternId = framePatternId;
 
   // Handle legacy motifId mapping if passed
-  if (motifId && !frameColorId) {
-    if (motifId === 'pure-white') {
-      resolvedColorId = 'white';
-      resolvedPatternId = 'none';
-    } else if (motifId === 'checkered') {
-      resolvedColorId = 'navy';
-      resolvedPatternId = 'checkered';
-    } else if (motifId === 'grain') {
-      resolvedColorId = 'navy';
-      resolvedPatternId = 'grain';
-    } else if (motifId === 'double-border') {
-      resolvedColorId = 'navy';
-      resolvedPatternId = 'border';
-    } else if (motifId === 'modern-gradient') {
-      resolvedColorId = 'navy';
-      resolvedPatternId = 'gradient';
-    } else {
-      resolvedColorId = 'black';
-      resolvedPatternId = 'none';
-    }
+  if (motifId && !framePatternId) {
+    if (motifId === 'checkered') resolvedPatternId = 'checkered';
+    else if (motifId === 'grain') resolvedPatternId = 'grain';
+    else if (motifId === 'double-border') resolvedPatternId = 'border';
+    else if (motifId === 'modern-gradient') resolvedPatternId = 'gradient';
+    else resolvedPatternId = 'none';
   }
 
-  const frameColor = FRAME_COLORS.find((c) => c.id === resolvedColorId) || FRAME_COLORS[4]; // default navy
   const filter = PHOTO_FILTERS.find((f) => f.id === filterId) || PHOTO_FILTERS[0];
 
   let canvasWidth = 1000;
@@ -216,12 +240,25 @@ export async function renderPhotostrip({
   // 1. Draw 2-Section Frame (Base Color + Pattern Overlay)
   drawFrameBackground(ctx, canvasWidth, canvasHeight, frameColor, resolvedPatternId);
 
-  // 2. Compute Slots
-  const paddingX = canvasWidth * 0.075;
-  const paddingTop = canvasHeight * 0.045;
-  const paddingBottom = canvasHeight * 0.095; // room for watermark footer
-  const gap = canvasWidth * 0.035;
+  // 2. Compute Slots based on watermarkPosition
+  let paddingX = canvasWidth * 0.075;
+  let paddingTop = canvasHeight * 0.045;
+  let paddingBottom = canvasHeight * 0.045;
 
+  if (watermarkPosition === 'top') {
+    paddingTop = canvasHeight * 0.095;
+    paddingBottom = canvasHeight * 0.045;
+  } else if (watermarkPosition === 'side') {
+    paddingX = canvasWidth * 0.085;
+    paddingTop = canvasHeight * 0.045;
+    paddingBottom = canvasHeight * 0.045;
+  } else {
+    // Default 'bottom'
+    paddingTop = canvasHeight * 0.045;
+    paddingBottom = canvasHeight * 0.095;
+  }
+
+  const gap = canvasWidth * 0.035;
   const availableWidth = canvasWidth - (paddingX * 2);
   const availableHeight = canvasHeight - paddingTop - paddingBottom;
 
@@ -262,9 +299,9 @@ export async function renderPhotostrip({
       try {
         const img = await loadImage(photoDataUrl);
 
-        // Photo slot container background / shadow
+        // Photo slot container background
         ctx.save();
-        ctx.fillStyle = frameColor.isLight ? '#F1F5F9' : '#080D1A';
+        ctx.fillStyle = frameColor.isLight ? '#E2E8F0' : '#080D1A';
         ctx.fillRect(slot.x, slot.y, slot.width, slot.height);
         ctx.restore();
 
@@ -278,10 +315,18 @@ export async function renderPhotostrip({
 
         // Photo hairline border
         ctx.save();
-        ctx.strokeStyle = frameColor.isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.12)';
+        ctx.strokeStyle = frameColor.isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.14)';
         ctx.lineWidth = 2;
         ctx.strokeRect(slot.x, slot.y, slot.width, slot.height);
         ctx.restore();
+
+        // 4. Aesthetic Washi Tape Accent
+        if (showTape) {
+          const tapeW = slot.width * 0.22;
+          const tapeH = 34;
+          drawWashiTape(ctx, slot.x + tapeW * 0.45, slot.y + 4, tapeW, tapeH, -7);
+          drawWashiTape(ctx, slot.x + slot.width - tapeW * 0.45, slot.y + 4, tapeW, tapeH, 7);
+        }
       } catch (err) {
         console.error('Failed to load image for slot', i, err);
       }
@@ -291,89 +336,99 @@ export async function renderPhotostrip({
     }
   }
 
-  // 4. Clean Sans-serif Watermark Frame & Footer
-  const footerCenterY = canvasHeight - (paddingBottom / 2) + 8;
+  // 5. Clean Sans-serif Watermark Frame according to watermarkPosition
+  const displayDate = dateString || new Date().toISOString().slice(0, 10).replace(/-/g, '.');
 
-  // Custom Caption
-  if (caption && caption.trim().length > 0) {
+  if (watermarkPosition === 'top') {
+    const headerCenterY = (paddingTop / 2) + 6;
+
+    if (caption && caption.trim().length > 0) {
+      ctx.save();
+      ctx.font = 'bold 30px "Plus Jakarta Sans", "Inter", sans-serif';
+      ctx.fillStyle = frameColor.text;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.letterSpacing = '3px';
+      ctx.fillText(caption.toUpperCase(), canvasWidth / 2, headerCenterY - 26);
+      ctx.restore();
+    }
+
     ctx.save();
-    ctx.font = 'bold 34px "Inter", sans-serif';
+    ctx.font = '800 24px "Plus Jakarta Sans", "Inter", sans-serif';
     ctx.fillStyle = frameColor.text;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.letterSpacing = '3px';
-    ctx.fillText(caption.toUpperCase(), canvasWidth / 2, footerCenterY - 32);
+    ctx.letterSpacing = '5px';
+    ctx.fillText('YUKPHOTO', canvasWidth / 2, headerCenterY + 12);
     ctx.restore();
-  }
 
-  // Watermark text: "YUKPHOTO" & Date Stamp
-  ctx.save();
-  ctx.font = '700 24px "Inter", sans-serif';
-  ctx.fillStyle = frameColor.text;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.letterSpacing = '5px';
-  ctx.fillText('YUKPHOTO', canvasWidth / 2, footerCenterY + 8);
-  ctx.restore();
-
-  // Date and Sub-watermark
-  ctx.save();
-  ctx.font = '500 18px "Inter", monospace';
-  ctx.fillStyle = frameColor.subtext;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.letterSpacing = '2px';
-  const displayDate = dateString || new Date().toISOString().slice(0, 10).replace(/-/g, '.');
-  ctx.fillText(`${displayDate}  •  DIGITAL PHOTO STUDIO`, canvasWidth / 2, footerCenterY + 36);
-  ctx.restore();
-
-  // Minimalist hairline barcode simulation
-  ctx.save();
-  ctx.fillStyle = frameColor.subtext;
-  const barcodeY = canvasHeight - 24;
-  const barWidth = 2.5;
-  const barcodeStart = canvasWidth / 2 - 110;
-  for (let b = 0; b < 36; b++) {
-    const isThick = (b % 3 === 0) || (b % 7 === 0);
-    const height = (b % 5 === 0) ? 12 : 8;
-    ctx.fillRect(barcodeStart + (b * 6), barcodeY - (height / 2), isThick ? barWidth * 1.6 : barWidth, height);
-  }
-  ctx.restore();
-
-  // 5. Minimalist Graphic Badges / Stamps
-  for (const stamp of stamps) {
     ctx.save();
-    const posX = (stamp.xPercent / 100) * canvasWidth;
-    const posY = (stamp.yPercent / 100) * canvasHeight;
-
-    ctx.translate(posX, posY);
-    if (stamp.rotation) {
-      ctx.rotate((stamp.rotation * Math.PI) / 180);
-    }
-
-    const fontSize = (stamp.size || 36) * (canvasWidth / 600);
-    ctx.font = `800 ${fontSize}px "Inter", sans-serif`;
+    ctx.font = '500 17px "Plus Jakarta Sans", "Inter", monospace';
+    ctx.fillStyle = frameColor.subtext;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.letterSpacing = '2px';
+    ctx.fillText(`${displayDate}  •  DIGITAL PHOTO STUDIO`, canvasWidth / 2, headerCenterY + 40);
+    ctx.restore();
 
-    const textWidth = ctx.measureText(stamp.label).width;
-    const padX = fontSize * 0.5;
-    const padY = fontSize * 0.35;
+  } else if (watermarkPosition === 'side') {
+    // Elegant vertical watermark along the right boundary
+    ctx.save();
+    ctx.translate(canvasWidth - 36, canvasHeight / 2);
+    ctx.rotate(Math.PI / 2);
+    ctx.font = '800 22px "Plus Jakarta Sans", "Inter", sans-serif';
+    ctx.fillStyle = frameColor.text;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.letterSpacing = '6px';
+    const sideText = caption ? `${caption.toUpperCase()}  •  YUKPHOTO  •  ${displayDate}` : `YUKPHOTO  •  ${displayDate}  •  STUDIO ARCHIVE`;
+    ctx.fillText(sideText, 0, 0);
+    ctx.restore();
 
-    // Stamp box background
-    ctx.fillStyle = frameColor.isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(11, 17, 32, 0.9)';
-    ctx.strokeStyle = '#2563EB';
-    ctx.lineWidth = 2;
+  } else {
+    // Default 'bottom'
+    const footerCenterY = canvasHeight - (paddingBottom / 2) + 8;
 
-    ctx.beginPath();
-    ctx.rect(-textWidth / 2 - padX, -fontSize / 2 - padY, textWidth + padX * 2, fontSize + padY * 2);
-    ctx.fill();
-    ctx.stroke();
+    if (caption && caption.trim().length > 0) {
+      ctx.save();
+      ctx.font = 'bold 34px "Plus Jakarta Sans", "Inter", sans-serif';
+      ctx.fillStyle = frameColor.text;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.letterSpacing = '3px';
+      ctx.fillText(caption.toUpperCase(), canvasWidth / 2, footerCenterY - 32);
+      ctx.restore();
+    }
 
-    // Stamp text
-    ctx.fillStyle = frameColor.isLight ? '#1D4ED8' : '#93C5FD';
-    ctx.fillText(stamp.label, 0, 0);
+    ctx.save();
+    ctx.font = '800 24px "Plus Jakarta Sans", "Inter", sans-serif';
+    ctx.fillStyle = frameColor.text;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.letterSpacing = '5px';
+    ctx.fillText('YUKPHOTO', canvasWidth / 2, footerCenterY + 8);
+    ctx.restore();
+
+    ctx.save();
+    ctx.font = '500 18px "Plus Jakarta Sans", "Inter", monospace';
+    ctx.fillStyle = frameColor.subtext;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.letterSpacing = '2px';
+    ctx.fillText(`${displayDate}  •  DIGITAL PHOTO STUDIO`, canvasWidth / 2, footerCenterY + 36);
+    ctx.restore();
+
+    // Hairline barcode simulation at footer
+    ctx.save();
+    ctx.fillStyle = frameColor.subtext;
+    const barcodeY = canvasHeight - 24;
+    const barWidth = 2.5;
+    const barcodeStart = canvasWidth / 2 - 110;
+    for (let b = 0; b < 36; b++) {
+      const isThick = (b % 3 === 0) || (b % 7 === 0);
+      const height = (b % 5 === 0) ? 12 : 8;
+      ctx.fillRect(barcodeStart + (b * 6), barcodeY - (height / 2), isThick ? barWidth * 1.6 : barWidth, height);
+    }
     ctx.restore();
   }
 

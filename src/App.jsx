@@ -83,7 +83,11 @@ export default function App() {
             onProceedToResult={handleProceedToResult}
             onRetake={handleRetakePhotos}
             initialFilter={editorData?.filterId || 'normal'}
-            initialMotif={editorData?.motifId || 'classic'}
+            initialColorId={editorData?.frameColorId || 'navy'}
+            initialCustomColor={editorData?.customColor || '#2563EB'}
+            initialPatternId={editorData?.framePatternId || 'none'}
+            initialShowTape={editorData?.showTape ?? true}
+            initialWatermarkPosition={editorData?.watermarkPosition || 'bottom'}
             initialCaption={editorData?.caption || 'STUDIO MEMORIES'}
             initialDate={editorData?.dateString || ''}
           />

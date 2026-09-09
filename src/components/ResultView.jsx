@@ -6,8 +6,6 @@ import {
   QrCode, 
   RotateCcw, 
   SlidersHorizontal, 
-  Sparkles, 
-  Share2, 
   Check, 
   ExternalLink,
   Copy
@@ -37,18 +35,19 @@ export default function ResultView({
           layout: editorData.layout,
           filterId: editorData.filterId,
           frameColorId: editorData.frameColorId,
+          customColor: editorData.customColor,
           framePatternId: editorData.framePatternId,
-          motifId: editorData.motifId,
+          showTape: editorData.showTape ?? true,
+          watermarkPosition: editorData.watermarkPosition || 'bottom',
           caption: editorData.caption,
           dateString: editorData.dateString,
-          stamps: editorData.stamps,
         });
 
         if (isMounted) {
           setRenderedImageUrl(dataUrl);
           setIsRendering(false);
 
-          // Trigger celebratory confetti!
+          // Trigger celebratory confetti
           triggerConfetti();
         }
       } catch (err) {
@@ -128,18 +127,18 @@ export default function ResultView({
   };
 
   return (
-    <div className="min-h-[calc(100vh-70px)] py-8 px-4 sm:px-6 max-w-6xl mx-auto flex flex-col justify-between font-sans">
+    <div className="min-h-[calc(100vh-70px)] py-8 px-4 sm:px-6 max-w-6xl mx-auto flex flex-col justify-between font-sans text-slate-100">
       
       {/* Top Title */}
       <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-300 text-xs font-medium mb-3">
-          <Check className="w-3.5 h-3.5 text-blue-500" strokeWidth={2} />
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-medium mb-3">
+          <Check className="w-3.5 h-3.5 text-blue-400" strokeWidth={2} />
           <span>Foto Strip Berhasil Diciptakan</span>
         </div>
-        <h2 className="font-sans font-bold text-3xl sm:text-5xl text-slate-900 dark:text-white tracking-tight">
+        <h2 className="font-sans font-bold text-3xl sm:text-5xl text-white tracking-tight">
           Ini Dia Hasil Fotomu!
         </h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-md mx-auto">
+        <p className="text-sm text-slate-400 mt-2 max-w-md mx-auto">
           Strip fotomu sudah siap dalam resolusi tinggi. Unduh ke perangkatmu atau scan QR code untuk dibuka di smartphone.
         </p>
       </div>
@@ -151,13 +150,13 @@ export default function ResultView({
         <div className="md:col-span-7 flex justify-center">
           <div className="relative group max-w-[320px] sm:max-w-[360px] w-full">
             {isRendering ? (
-              <div className="aspect-[1/2] rounded-3xl bg-slate-200/60 dark:bg-slate-900/60 border border-slate-300 dark:border-white/10 flex flex-col items-center justify-center p-8 text-center animate-pulse">
+              <div className="aspect-[1/2] rounded-3xl bg-slate-900/60 border border-slate-800 flex flex-col items-center justify-center p-8 text-center animate-pulse">
                 <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
-                <p className="font-bold text-sm text-slate-900 dark:text-white">Merender Kualitas Tinggi...</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Menerapkan warna, pola motif & stempel ke kanvas 300 DPI</p>
+                <p className="font-bold text-sm text-white">Merender Kualitas Tinggi...</p>
+                <p className="text-xs text-slate-400 mt-1">Menerapkan warna, pola motif & stempel ke kanvas 300 DPI</p>
               </div>
             ) : (
-              <div className="relative rounded-2xl overflow-hidden photostrip-shadow border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-black/40 backdrop-blur-md">
+              <div className="relative rounded-2xl overflow-hidden photostrip-shadow border border-slate-800 bg-black/40 backdrop-blur-md">
                 <img
                   src={renderedImageUrl}
                   alt="Hasil Akhir Photobooth"
@@ -165,10 +164,10 @@ export default function ResultView({
                 />
 
                 {/* Floating Quick Action Overlay on hover */}
-                <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                   <button
                     onClick={handleOpenPreview}
-                    className="p-3 rounded-full bg-white text-slate-900 hover:scale-110 shadow-lg transition-transform"
+                    className="p-3 rounded-full bg-slate-800 text-white hover:scale-110 shadow-lg border border-slate-700 transition-transform"
                     title="Buka Gambar Penuh"
                   >
                     <ExternalLink className="w-5 h-5" strokeWidth={1.75} />
@@ -190,8 +189,8 @@ export default function ResultView({
         <div className="md:col-span-5 space-y-4">
           
           {/* Main Download Card */}
-          <div className="glass-panel p-6 rounded-3xl border border-slate-300 dark:border-slate-700/80 space-y-4">
-            <h3 className="font-sans font-bold text-lg text-slate-900 dark:text-white">
+          <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
+            <h3 className="font-sans font-bold text-lg text-white">
               Opsi Simpan & Bagikan
             </h3>
 
@@ -213,9 +212,9 @@ export default function ResultView({
                 setShowQrModal(true);
               }}
               disabled={isRendering}
-              className="w-full py-3.5 px-5 rounded-xl glass-button text-slate-800 dark:text-white font-medium text-sm flex items-center justify-center gap-2"
+              className="w-full py-3.5 px-5 rounded-xl glass-button text-white font-medium text-sm flex items-center justify-center gap-2"
             >
-              <QrCode className="w-4 h-4 text-blue-500" strokeWidth={1.75} />
+              <QrCode className="w-4 h-4 text-blue-400" strokeWidth={1.75} />
               <span>Tampilkan QR Code HP</span>
             </button>
 
@@ -223,16 +222,16 @@ export default function ResultView({
             <button
               onClick={handleCopyImage}
               disabled={isRendering}
-              className="w-full py-3 px-4 rounded-xl bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-300 dark:border-white/5 text-slate-700 dark:text-slate-300 text-xs font-medium flex items-center justify-center gap-2 transition-all"
+              className="w-full py-3 px-4 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 text-slate-300 text-xs font-medium flex items-center justify-center gap-2 transition-all"
             >
               {isCopied ? (
                 <>
-                  <Check className="w-4 h-4 text-emerald-500" strokeWidth={2} />
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">Tersalin ke Clipboard!</span>
+                  <Check className="w-4 h-4 text-emerald-400" strokeWidth={2} />
+                  <span className="text-emerald-400 font-bold">Tersalin ke Clipboard!</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-4 h-4 text-slate-500 dark:text-slate-400" strokeWidth={1.75} />
+                  <Copy className="w-4 h-4 text-slate-400" strokeWidth={1.75} />
                   <span>Salin Gambar ke Clipboard</span>
                 </>
               )}
@@ -240,7 +239,7 @@ export default function ResultView({
           </div>
 
           {/* Secondary Actions Card */}
-          <div className="glass-panel p-4 rounded-3xl border border-white/10 flex items-center justify-between gap-3">
+          <div className="glass-panel p-4 rounded-3xl border border-slate-800 flex items-center justify-between gap-3">
             <button
               onClick={() => {
                 playPopSound();
@@ -248,7 +247,7 @@ export default function ResultView({
               }}
               className="flex-1 py-2.5 px-3 rounded-xl glass-button text-xs font-semibold text-slate-300 hover:text-white flex items-center justify-center gap-1.5"
             >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-purple-400" />
+              <SlidersHorizontal className="w-3.5 h-3.5 text-blue-400" strokeWidth={1.75} />
               <span>Edit Lagi</span>
             </button>
 
@@ -261,7 +260,7 @@ export default function ResultView({
               }}
               className="flex-1 py-2.5 px-3 rounded-xl glass-button text-xs font-semibold text-rose-300 hover:text-white flex items-center justify-center gap-1.5 hover:bg-rose-500/20"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
+              <RotateCcw className="w-3.5 h-3.5 text-rose-400" strokeWidth={1.75} />
               <span>Foto Ulang</span>
             </button>
           </div>
@@ -277,15 +276,15 @@ export default function ResultView({
           onClick={() => setShowQrModal(false)}
         >
           <div 
-            className="glass-panel max-w-sm w-full p-6 sm:p-8 rounded-3xl border border-white/20 text-center shadow-2xl space-y-5"
+            className="glass-panel max-w-sm w-full p-6 sm:p-8 rounded-3xl border border-slate-700 text-center shadow-2xl space-y-5"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="inline-flex p-3 rounded-2xl bg-blue-500/20 text-blue-300 border border-blue-500/30">
-              <QrCode className="w-6 h-6" />
+              <QrCode className="w-6 h-6" strokeWidth={1.75} />
             </div>
 
             <div>
-              <h3 className="font-display font-bold text-xl text-white">
+              <h3 className="font-sans font-bold text-xl text-white">
                 Scan QR Code di HP
               </h3>
               <p className="text-xs text-slate-400 mt-1">
@@ -303,7 +302,7 @@ export default function ResultView({
               />
             </div>
 
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[11px] text-slate-400">
               Menghubungkan ke studio yukphoto lokal kamu.
             </p>
 

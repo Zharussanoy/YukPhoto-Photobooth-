@@ -109,7 +109,7 @@ export default function CameraView({ layout, onPhotosCaptured, onCancel }) {
     }
 
     setCurrentShotIndex(shotIndex);
-    setPoseMessage(`Bersiap untuk Foto ${shotIndex + 1} dari ${requiredCount}! 📸`);
+    setPoseMessage(`Bersiap untuk Foto ${shotIndex + 1} dari ${requiredCount}!`);
 
     let count = 3;
     setCountdown(count);
@@ -138,12 +138,12 @@ export default function CameraView({ layout, onPhotosCaptured, onCancel }) {
 
         // Check if next shot needed
         if (shotIndex + 1 < requiredCount) {
-          setPoseMessage(`Bagus! Ganti pose untuk foto berikutnya... ✨`);
+          setPoseMessage(`Bagus! Ganti pose untuk foto berikutnya...`);
           setTimeout(() => {
             runShotCycle(shotIndex + 1, updatedPhotos);
           }, 1800); // 1.8s breath between shots
         } else {
-          setPoseMessage(`Selesai! Memproses hasil fotomu... 🎉`);
+          setPoseMessage(`Selesai! Memproses hasil fotomu...`);
           setTimeout(() => {
             setIsCapturingSession(false);
             onPhotosCaptured(updatedPhotos);
@@ -184,10 +184,10 @@ export default function CameraView({ layout, onPhotosCaptured, onCancel }) {
     // Generate beautiful colorful aesthetic photo placeholders
     const samples = [];
     const colors = [
-      ['#8b5cf6', '#ec4899', 'Pose 1 • Smile 😊'],
-      ['#3b82f6', '#06b6d4', 'Pose 2 • Peace ✌️'],
-      ['#f59e0b', '#ef4444', 'Pose 3 • Wink 😉'],
-      ['#10b981', '#6366f1', 'Pose 4 • Heart 💖'],
+      ['#8b5cf6', '#ec4899', 'Pose 1 • Studio Smile'],
+      ['#3b82f6', '#06b6d4', 'Pose 2 • Studio Peace'],
+      ['#f59e0b', '#ef4444', 'Pose 3 • Studio Wink'],
+      ['#10b981', '#6366f1', 'Pose 4 • Studio Portrait'],
     ];
 
     for (let i = 0; i < requiredCount; i++) {
@@ -340,7 +340,7 @@ export default function CameraView({ layout, onPhotosCaptured, onCancel }) {
                   </span>
                 </div>
                 <p className="font-display font-bold text-lg sm:text-2xl text-blue-200 mt-4 tracking-wider uppercase drop-shadow-md">
-                  Pose Foto {currentShotIndex + 1}! ✨
+                  Pose Foto {currentShotIndex + 1}!
                 </p>
               </div>
             )}
