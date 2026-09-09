@@ -2,14 +2,16 @@ import React, { useState, useRef } from 'react';
 import {
   Wand2,
   Palette,
-  Sparkles,
   Type,
   ArrowRight,
   RotateCcw,
   Calendar,
   Check,
   Pipette,
-  Layers,
+  Film,
+  Minimize2,
+  Maximize2,
+  Square,
   AlignVerticalJustifyStart,
   AlignVerticalJustifyEnd,
   AlignHorizontalJustifyCenter
@@ -35,7 +37,8 @@ export default function PhotoEditor({
   initialColorId = 'navy',
   initialCustomColor = '#2563EB',
   initialPatternId = 'none',
-  initialShowTape = true,
+  initialFramePadding = 'standard',
+  initialEnableFilmGrain = false,
   initialWatermarkPosition = 'bottom',
   initialCaption = 'STUDIO MEMORIES',
   initialDate = '',
@@ -44,12 +47,13 @@ export default function PhotoEditor({
   const colorInputRef = useRef(null);
 
   // Editor States
-  const [activeTab, setActiveTab] = useState('frames'); // 'frames' | 'filters' | 'accents' | 'text'
+  const [activeTab, setActiveTab] = useState('frames'); // 'frames' | 'filters' | 'text'
   const [selectedFilter, setSelectedFilter] = useState(initialFilter);
   const [selectedColorId, setSelectedColorId] = useState(initialColorId);
   const [customColor, setCustomColor] = useState(initialCustomColor);
   const [selectedPatternId, setSelectedPatternId] = useState(initialPatternId);
-  const [showTape, setShowTape] = useState(initialShowTape);
+  const [framePadding, setFramePadding] = useState(initialFramePadding); // 'minimal' | 'standard' | 'korean'
+  const [enableFilmGrain, setEnableFilmGrain] = useState(initialEnableFilmGrain);
   const [watermarkPosition, setWatermarkPosition] = useState(initialWatermarkPosition); // 'bottom' | 'top' | 'side'
   const [caption, setCaption] = useState(initialCaption);
   const [dateString, setDateString] = useState(
@@ -93,12 +97,21 @@ export default function PhotoEditor({
       frameColorId: selectedColorId,
       customColor: isCustomColor ? customColor : null,
       framePatternId: selectedPatternId,
-      showTape,
+      framePadding,
+      enableFilmGrain,
       watermarkPosition,
       caption,
       dateString,
     });
   };
+
+  // Preview padding class calculation
+  let paddingClasses = 'p-4 sm:p-5';
+  if (framePadding === 'minimal') {
+    paddingClasses = 'p-2.5 sm:p-3';
+  } else if (framePadding === 'korean') {
+    paddingClasses = 'p-6 sm:p-7';
+  }
 
   return (
     <div className="min-h-[calc(100vh-70px)] py-6 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col justify-between font-sans text-slate-100">
@@ -113,7 +126,7 @@ export default function PhotoEditor({
             </span>
           </h2>
           <p className="text-xs sm:text-sm text-slate-400">
-            Sesuaikan warna dasar bingkai, pola motif overlay, filter kamera, aksen selotip, dan watermark.
+            Sesuaikan warna dasar bingkai, ketebalan frame, efek film grain analog, dan teks watermark.
           </p>
         </div>
 
@@ -148,16 +161,16 @@ export default function PhotoEditor({
         <div className="lg:col-span-5 flex justify-center sticky top-20 select-none">
           <div className="relative max-w-[340px] sm:max-w-[370px] w-full p-2 rounded-3xl bg-slate-950/70 border border-slate-800 shadow-2xl backdrop-blur-sm flex justify-center">
 
-            {/* The Actual Styled Photostrip (Base Color + Pattern Overlay) */}
+            {/* The Actual Styled Photostrip (Base Color + Pattern Overlay + Frame Padding) */}
             <div
               ref={stripRef}
               style={{
                 backgroundColor: currentColorObj.hex,
                 color: currentColorObj.text,
               }}
-              className="relative w-full rounded-2xl p-4 sm:p-5 transition-all duration-300 photostrip-shadow overflow-hidden flex flex-col justify-between"
+              className={`relative w-full rounded-2xl ${paddingClasses} transition-all duration-300 photostrip-shadow overflow-hidden flex flex-col justify-between`}
             >
-              {/* Pattern Overlay 1: Checkered */}
+              {/* Pattern Overlay: Checkered */}
               {selectedPatternId === 'checkered' && (
                 <div
                   className="absolute inset-0 rounded-2xl pointer-events-none"
@@ -168,18 +181,7 @@ export default function PhotoEditor({
                 />
               )}
 
-              {/* Pattern Overlay 2: Subtle Grain */}
-              {selectedPatternId === 'grain' && (
-                <div
-                  className="absolute inset-0 rounded-2xl pointer-events-none opacity-25"
-                  style={{
-                    backgroundImage: `radial-gradient(${currentColorObj.isLight ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.4)'} 1px, transparent 1px)`,
-                    backgroundSize: '4px 4px'
-                  }}
-                />
-              )}
-
-              {/* Pattern Overlay 3: Minimalist Double Border */}
+              {/* Pattern Overlay: Minimalist Double Border */}
               {selectedPatternId === 'border' && (
                 <div
                   className="absolute inset-1.5 border border-dashed rounded-xl pointer-events-none"
@@ -187,7 +189,7 @@ export default function PhotoEditor({
                 />
               )}
 
-              {/* Pattern Overlay 4: Modern Gradient Overlay */}
+              {/* Pattern Overlay: Modern Gradient Overlay */}
               {selectedPatternId === 'gradient' && (
                 <div
                   className="absolute inset-0 rounded-2xl pointer-events-none"
@@ -195,6 +197,17 @@ export default function PhotoEditor({
                     background: currentColorObj.isLight
                       ? 'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(37, 99, 235, 0.15) 100%)'
                       : 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(37, 99, 235, 0.3) 100%)'
+                  }}
+                />
+              )}
+
+              {/* Efek Film Grain Overlay (Analog Vintage Film 35mm) */}
+              {enableFilmGrain && (
+                <div
+                  className="absolute inset-0 rounded-2xl pointer-events-none opacity-30 z-20 mix-blend-overlay"
+                  style={{
+                    backgroundImage: `radial-gradient(${currentColorObj.isLight ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.6)'} 1px, transparent 1px)`,
+                    backgroundSize: '3px 3px'
                   }}
                 />
               )}
@@ -232,21 +245,13 @@ export default function PhotoEditor({
 
               {/* Photos Container */}
               {layout.id === 'grid-2x2' ? (
-                <div className="grid grid-cols-2 gap-2.5 my-auto relative z-10">
+                <div className="grid grid-cols-2 gap-2 my-auto relative z-10">
                   {photos.slice(0, 4).map((photo, i) => (
                     <div
                       key={i}
                       className="aspect-[4/5] rounded-lg overflow-hidden bg-black/30 shadow-sm relative border"
                       style={{ borderColor: currentColorObj.isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.12)' }}
                     >
-                      {/* Aksen Selotip (Washi Tape) */}
-                      {showTape && (
-                        <>
-                          <div className="absolute -top-2 left-2.5 w-7 h-3.5 bg-white/45 backdrop-blur-[2px] border-y border-white/30 rounded-[1px] shadow-sm transform -rotate-6 z-20 pointer-events-none" />
-                          <div className="absolute -top-2 right-2.5 w-7 h-3.5 bg-white/45 backdrop-blur-[2px] border-y border-white/30 rounded-[1px] shadow-sm transform rotate-6 z-20 pointer-events-none" />
-                        </>
-                      )}
-
                       <img
                         src={photo}
                         alt={`Slot ${i + 1}`}
@@ -264,14 +269,6 @@ export default function PhotoEditor({
                       className="aspect-[4/3] rounded-lg overflow-hidden bg-black/30 shadow-sm relative border"
                       style={{ borderColor: currentColorObj.isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.12)' }}
                     >
-                      {/* Aksen Selotip (Washi Tape) */}
-                      {showTape && (
-                        <>
-                          <div className="absolute -top-2 left-3 w-8 sm:w-10 h-3.5 sm:h-4 bg-white/45 backdrop-blur-[2px] border-y border-white/30 rounded-[1px] shadow-sm transform -rotate-6 z-20 pointer-events-none" />
-                          <div className="absolute -top-2 right-3 w-8 sm:w-10 h-3.5 sm:h-4 bg-white/45 backdrop-blur-[2px] border-y border-white/30 rounded-[1px] shadow-sm transform rotate-6 z-20 pointer-events-none" />
-                        </>
-                      )}
-
                       <img
                         src={photo}
                         alt={`Slot ${i + 1}`}
@@ -306,7 +303,7 @@ export default function PhotoEditor({
                     {dateString} • DIGITAL ARCHIVE
                   </p>
 
-                  {/* Hairline Barcode (Single Style Prop) */}
+                  {/* Hairline Barcode */}
                   <div className="flex justify-center items-center gap-[2px] mt-2 opacity-50 h-2 overflow-hidden">
                     {Array.from({ length: 30 }).map((_, b) => (
                       <div
@@ -379,21 +376,6 @@ export default function PhotoEditor({
               <button
                 onClick={() => {
                   playPopSound();
-                  setActiveTab('accents');
-                }}
-                className={`flex-1 min-w-[90px] py-2 px-3 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
-                  activeTab === 'accents'
-                    ? 'bg-blue-600 text-white shadow-sm font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-900'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5" strokeWidth={1.75} />
-                <span>Aksen & Detail</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  playPopSound();
                   setActiveTab('text');
                 }}
                 className={`flex-1 min-w-[90px] py-2 px-3 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
@@ -403,15 +385,15 @@ export default function PhotoEditor({
                 }`}
               >
                 <Type className="w-3.5 h-3.5" strokeWidth={1.75} />
-                <span>Teks & Date</span>
+                <span>Teks & Layout</span>
               </button>
             </div>
 
-            {/* TAB CONTENT: 1. Frames (2 SEKSI INDEPENDEN) */}
+            {/* TAB CONTENT: 1. Frames (Warna Dasar + Ketebalan + Pola + Film Grain) */}
             {activeTab === 'frames' && (
               <div className="space-y-6">
 
-                {/* SEKSI 1: Warna Dasar Frame (Color Palette Selector + Custom Pipet Picker) */}
+                {/* SEKSI 1: Warna Dasar Frame (Preset + Pipet Kustom) */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <div>
@@ -525,13 +507,90 @@ export default function PhotoEditor({
                   </div>
                 </div>
 
-                {/* SEKSI 2: Tekstur & Pola Motif (Pattern Overlay di atas warna dasar) */}
+                {/* SEKSI 2: Ketebalan Bingkai (Frame Padding) */}
                 <div className="pt-4 border-t border-slate-800">
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <h3 className="font-sans font-semibold text-sm text-white flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-blue-500" />
-                        <span>Seksi 2: Tekstur & Pola Motif</span>
+                        <span>Seksi 2: Ketebalan Bingkai (Frame Padding)</span>
+                      </h3>
+                      <p className="text-xs text-slate-400">
+                        Atur luas batas bingkai foto photobooth kamu
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {/* Minimalis */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playPopSound();
+                        setFramePadding('minimal');
+                      }}
+                      className={`p-3 rounded-xl border text-left transition-all flex items-center gap-3 ${
+                        framePadding === 'minimal'
+                          ? 'bg-blue-950/50 border-blue-500 ring-2 ring-blue-500/40 text-white'
+                          : 'bg-slate-950/80 border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-slate-300'
+                      }`}
+                    >
+                      <Minimize2 className="w-4 h-4 text-blue-400 flex-shrink-0" strokeWidth={1.75} />
+                      <div>
+                        <span className="text-xs font-bold block">Minimalis</span>
+                        <span className="text-[11px] text-slate-400 block">Padding tipis</span>
+                      </div>
+                    </button>
+
+                    {/* Standard Studio */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playPopSound();
+                        setFramePadding('standard');
+                      }}
+                      className={`p-3 rounded-xl border text-left transition-all flex items-center gap-3 ${
+                        framePadding === 'standard'
+                          ? 'bg-blue-950/50 border-blue-500 ring-2 ring-blue-500/40 text-white'
+                          : 'bg-slate-950/80 border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-slate-300'
+                      }`}
+                    >
+                      <Square className="w-4 h-4 text-blue-400 flex-shrink-0" strokeWidth={1.75} />
+                      <div>
+                        <span className="text-xs font-bold block">Standard Studio</span>
+                        <span className="text-[11px] text-slate-400 block">Padding sedang</span>
+                      </div>
+                    </button>
+
+                    {/* Korean Style */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playPopSound();
+                        setFramePadding('korean');
+                      }}
+                      className={`p-3 rounded-xl border text-left transition-all flex items-center gap-3 ${
+                        framePadding === 'korean'
+                          ? 'bg-blue-950/50 border-blue-500 ring-2 ring-blue-500/40 text-white'
+                          : 'bg-slate-950/80 border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-slate-300'
+                      }`}
+                    >
+                      <Maximize2 className="w-4 h-4 text-blue-400 flex-shrink-0" strokeWidth={1.75} />
+                      <div>
+                        <span className="text-xs font-bold block">Korean Style</span>
+                        <span className="text-[11px] text-slate-400 block">Padding tebal</span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* SEKSI 3: Tekstur & Pola Motif */}
+                <div className="pt-4 border-t border-slate-800">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h3 className="font-sans font-semibold text-sm text-white flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-blue-500" />
+                        <span>Seksi 3: Tekstur & Pola Motif</span>
                       </h3>
                       <p className="text-xs text-slate-400">
                         Pola overlay yang diterapkan di atas warna dasar frame
@@ -543,7 +602,7 @@ export default function PhotoEditor({
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {FRAME_PATTERNS.map((pattern) => {
+                    {FRAME_PATTERNS.filter(p => p.id !== 'grain').map((pattern) => {
                       const isSelected = selectedPatternId === pattern.id;
 
                       return (
@@ -583,15 +642,6 @@ export default function PhotoEditor({
                                 style={{ borderColor: currentColorObj.isLight ? '#000' : '#38BDF8' }}
                               />
                             )}
-                            {pattern.id === 'grain' && (
-                              <div
-                                className="absolute inset-0 opacity-30"
-                                style={{
-                                  backgroundImage: `radial-gradient(${currentColorObj.isLight ? '#000' : '#fff'} 1px, transparent 1px)`,
-                                  backgroundSize: '3px 3px'
-                                }}
-                              />
-                            )}
                             {pattern.id === 'gradient' && (
                               <div
                                 className="absolute inset-0"
@@ -619,6 +669,42 @@ export default function PhotoEditor({
                         </button>
                       );
                     })}
+                  </div>
+                </div>
+
+                {/* SEKSI 4: Toggle Efek Film Grain (Vintage Analog) */}
+                <div className="pt-4 border-t border-slate-800">
+                  <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-blue-950/50 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                        <Film className="w-5 h-5" strokeWidth={1.75} />
+                      </div>
+                      <div>
+                        <span className="text-xs sm:text-sm font-semibold text-white block">
+                          Efek Film Grain (Vintage Analog)
+                        </span>
+                        <span className="text-[11px] text-slate-400 block">
+                          Memberi tekstur bintik-bintik halus ala film 35mm retro di atas foto
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playPopSound();
+                        setEnableFilmGrain((prev) => !prev);
+                      }}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        enableFilmGrain ? 'bg-blue-600' : 'bg-slate-800'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          enableFilmGrain ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
                   </div>
                 </div>
 
@@ -682,74 +768,63 @@ export default function PhotoEditor({
               </div>
             )}
 
-            {/* TAB CONTENT: 3. Aksen & Detail (Selotip + Posisi Watermark) */}
-            {activeTab === 'accents' && (
+            {/* TAB CONTENT: 3. Teks & Layout */}
+            {activeTab === 'text' && (
               <div className="space-y-6">
-
-                {/* Seksi A: Aksen Selotip (Aesthetic Tape) */}
                 <div>
-                  <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-sans font-semibold text-sm text-white mb-3">
+                    Kustomisasi Teks & Tanggal
+                  </h3>
+
+                  <div className="space-y-3">
                     <div>
-                      <h3 className="font-sans font-semibold text-sm text-white flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-blue-500" />
-                        <span>Aksen Selotip (Aesthetic Tape)</span>
-                      </h3>
-                      <p className="text-xs text-slate-400">
-                        Tambahkan pita selotip transparan estetik di sudut foto
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-blue-950/50 border border-blue-500/30 flex items-center justify-center text-blue-400">
-                        <Layers className="w-5 h-5" strokeWidth={1.75} />
-                      </div>
-                      <div>
-                        <span className="text-xs sm:text-sm font-semibold text-white block">
-                          Tampilkan Selotip di Sudut Foto
-                        </span>
-                        <span className="text-[11px] text-slate-400 block">
-                          Efek washi tape analog vintage di setiap jepretan foto
-                        </span>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playPopSound();
-                        setShowTape((prev) => !prev);
-                      }}
-                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        showTape ? 'bg-blue-600' : 'bg-slate-800'
-                      }`}
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                          showTape ? 'translate-x-5' : 'translate-x-0'
-                        }`}
+                      <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                        Judul / Caption Foto:
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={28}
+                        value={caption}
+                        onChange={(e) => setCaption(e.target.value)}
+                        placeholder="Contoh: STUDIO MEMORIES"
+                        className="w-full px-4 py-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-sans"
                       />
-                    </button>
+                      <div className="flex justify-between text-[11px] text-slate-400 mt-1">
+                        <span>Tampil di watermark frame</span>
+                        <span>{caption.length}/28</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-blue-400" strokeWidth={1.75} />
+                        <span>Format Tanggal:</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={dateString}
+                        onChange={(e) => setDateString(e.target.value)}
+                        placeholder="2026.09.09"
+                        className="w-full px-4 py-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-mono"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* Seksi B: Posisi Watermark */}
+                {/* Posisi Watermark */}
                 <div className="pt-4 border-t border-slate-800">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <h3 className="font-sans font-semibold text-sm text-white flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-blue-500" />
-                        <span>Posisi Watermark Teks</span>
-                      </h3>
+                      <h4 className="font-sans font-semibold text-sm text-white">
+                        Posisi Watermark Teks
+                      </h4>
                       <p className="text-xs text-slate-400">
-                        Tentukan penempatan logo YUKPHOTO dan tanggal strip
+                        Tentukan letak teks YUKPHOTO dan tanggal strip
                       </p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {/* Opsi 1: Bawah (Default) */}
                     <button
                       type="button"
                       onClick={() => {
@@ -773,12 +848,11 @@ export default function PhotoEditor({
                       <div>
                         <span className="text-xs font-bold block">Di Bawah (Footer)</span>
                         <span className="text-[11px] text-slate-400 block mt-0.5">
-                          Format strip studio klasik
+                          Format klasik studio
                         </span>
                       </div>
                     </button>
 
-                    {/* Opsi 2: Atas (Header) */}
                     <button
                       type="button"
                       onClick={() => {
@@ -807,7 +881,6 @@ export default function PhotoEditor({
                       </div>
                     </button>
 
-                    {/* Opsi 3: Samping */}
                     <button
                       type="button"
                       onClick={() => {
@@ -831,54 +904,13 @@ export default function PhotoEditor({
                       <div>
                         <span className="text-xs font-bold block">Samping Ringkas</span>
                         <span className="text-[11px] text-slate-400 block mt-0.5">
-                          Format minimalis lateral
+                          Format lateral estetik
                         </span>
                       </div>
                     </button>
                   </div>
                 </div>
 
-              </div>
-            )}
-
-            {/* TAB CONTENT: 4. Text & Date */}
-            {activeTab === 'text' && (
-              <div className="space-y-4">
-                <h3 className="font-sans font-semibold text-sm text-white">
-                  Kustomisasi Teks & Tanggal
-                </h3>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                    Judul / Caption Foto:
-                  </label>
-                  <input
-                    type="text"
-                    maxLength={28}
-                    value={caption}
-                    onChange={(e) => setCaption(e.target.value)}
-                    placeholder="Contoh: STUDIO MEMORIES"
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-sans"
-                  />
-                  <div className="flex justify-between text-[11px] text-slate-400 mt-1">
-                    <span>Tampil di watermark frame</span>
-                    <span>{caption.length}/28</span>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-blue-400" strokeWidth={1.75} />
-                    <span>Format Tanggal:</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={dateString}
-                    onChange={(e) => setDateString(e.target.value)}
-                    placeholder="2026.09.09"
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-mono"
-                  />
-                </div>
               </div>
             )}
 

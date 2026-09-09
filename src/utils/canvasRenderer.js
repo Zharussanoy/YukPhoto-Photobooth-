@@ -1,5 +1,5 @@
-// Clean High-Resolution Canvas Renderer with 2-Section Independent Frame Styling (Color + Pattern)
-// Supports Aesthetic Washi Tape & Watermark Positions (Bottom / Top / Side)
+// Clean High-Resolution Canvas Renderer with Independent Frame Styling
+// Supports Frame Padding (Minimal / Standard / Korean), Analog Film Grain, and Watermark Positions
 
 import { PHOTO_FILTERS, FRAME_COLORS, FRAME_PATTERNS } from './filters';
 
@@ -20,18 +20,6 @@ function getLuminance(hex) {
   const g = parseInt(cleanHex.substring(2, 4), 16) || 0;
   const b = parseInt(cleanHex.substring(4, 6), 16) || 0;
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-}
-
-function drawWashiTape(ctx, cx, cy, width, height, angleDeg) {
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate((angleDeg * Math.PI) / 180);
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-  ctx.fillRect(-width / 2, -height / 2, width, height);
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(-width / 2, -height / 2, width, height);
-  ctx.restore();
 }
 
 function drawImageCover(ctx, img, x, y, width, height, radius = 8) {
@@ -108,30 +96,6 @@ function drawFrameBackground(ctx, width, height, frameColor, patternId) {
       }
     }
     ctx.restore();
-  } else if (patternId === 'grain') {
-    ctx.save();
-    const grainCanvas = document.createElement('canvas');
-    grainCanvas.width = 120;
-    grainCanvas.height = 120;
-    const grainCtx = grainCanvas.getContext('2d');
-    const imgData = grainCtx.createImageData(120, 120);
-    const data = imgData.data;
-
-    for (let i = 0; i < data.length; i += 4) {
-      const v = (Math.random() * 255) | 0;
-      data[i] = v;
-      data[i + 1] = v;
-      data[i + 2] = v;
-      data[i + 3] = isLight ? (Math.random() * 20) | 0 : (Math.random() * 28) | 0;
-    }
-    grainCtx.putImageData(imgData, 0, 0);
-
-    const grainPattern = ctx.createPattern(grainCanvas, 'repeat');
-    if (grainPattern) {
-      ctx.fillStyle = grainPattern;
-      ctx.fillRect(0, 0, width, height);
-    }
-    ctx.restore();
   } else if (patternId === 'border') {
     ctx.save();
     // Outer solid border
@@ -173,6 +137,35 @@ function drawFrameBackground(ctx, width, height, frameColor, patternId) {
   }
 }
 
+/**
+ * Draw analog film grain texture over canvas
+ */
+function applyFilmGrain(ctx, width, height, isLight) {
+  ctx.save();
+  const grainCanvas = document.createElement('canvas');
+  grainCanvas.width = 120;
+  grainCanvas.height = 120;
+  const grainCtx = grainCanvas.getContext('2d');
+  const imgData = grainCtx.createImageData(120, 120);
+  const data = imgData.data;
+
+  for (let i = 0; i < data.length; i += 4) {
+    const v = (Math.random() * 255) | 0;
+    data[i] = v;
+    data[i + 1] = v;
+    data[i + 2] = v;
+    data[i + 3] = isLight ? (Math.random() * 22) | 0 : (Math.random() * 30) | 0;
+  }
+  grainCtx.putImageData(imgData, 0, 0);
+
+  const grainPattern = ctx.createPattern(grainCanvas, 'repeat');
+  if (grainPattern) {
+    ctx.fillStyle = grainPattern;
+    ctx.fillRect(0, 0, width, height);
+  }
+  ctx.restore();
+}
+
 export async function renderPhotostrip({
   photos,
   layout,
@@ -180,7 +173,8 @@ export async function renderPhotostrip({
   frameColorId = 'navy',
   customColor = null,
   framePatternId = 'none',
-  showTape = true,
+  framePadding = 'standard', // 'minimal' | 'standard' | 'korean'
+  enableFilmGrain = false,
   watermarkPosition = 'bottom', // 'bottom' | 'top' | 'side'
   // Backward compatibility:
   motifId,
@@ -212,7 +206,6 @@ export async function renderPhotostrip({
   // Handle legacy motifId mapping if passed
   if (motifId && !framePatternId) {
     if (motifId === 'checkered') resolvedPatternId = 'checkered';
-    else if (motifId === 'grain') resolvedPatternId = 'grain';
     else if (motifId === 'double-border') resolvedPatternId = 'border';
     else if (motifId === 'modern-gradient') resolvedPatternId = 'gradient';
     else resolvedPatternId = 'none';
@@ -240,25 +233,32 @@ export async function renderPhotostrip({
   // 1. Draw 2-Section Frame (Base Color + Pattern Overlay)
   drawFrameBackground(ctx, canvasWidth, canvasHeight, frameColor, resolvedPatternId);
 
-  // 2. Compute Slots based on watermarkPosition
-  let paddingX = canvasWidth * 0.075;
+  // 2. Compute Slots based on framePadding & watermarkPosition
+  let padFactor = 0.075; // Standard Studio default (7.5%)
+  if (framePadding === 'minimal') {
+    padFactor = 0.04; // 4%
+  } else if (framePadding === 'korean') {
+    padFactor = 0.12; // 12% (Thick Korean style padding)
+  }
+
+  let paddingX = canvasWidth * padFactor;
   let paddingTop = canvasHeight * 0.045;
   let paddingBottom = canvasHeight * 0.045;
 
   if (watermarkPosition === 'top') {
     paddingTop = canvasHeight * 0.095;
-    paddingBottom = canvasHeight * 0.045;
+    paddingBottom = canvasHeight * (padFactor * 0.7);
   } else if (watermarkPosition === 'side') {
-    paddingX = canvasWidth * 0.085;
+    paddingX = canvasWidth * (padFactor * 1.15);
     paddingTop = canvasHeight * 0.045;
     paddingBottom = canvasHeight * 0.045;
   } else {
     // Default 'bottom'
-    paddingTop = canvasHeight * 0.045;
+    paddingTop = canvasHeight * (padFactor * 0.7);
     paddingBottom = canvasHeight * 0.095;
   }
 
-  const gap = canvasWidth * 0.035;
+  const gap = canvasWidth * (padFactor * 0.45);
   const availableWidth = canvasWidth - (paddingX * 2);
   const availableHeight = canvasHeight - paddingTop - paddingBottom;
 
@@ -319,14 +319,6 @@ export async function renderPhotostrip({
         ctx.lineWidth = 2;
         ctx.strokeRect(slot.x, slot.y, slot.width, slot.height);
         ctx.restore();
-
-        // 4. Aesthetic Washi Tape Accent
-        if (showTape) {
-          const tapeW = slot.width * 0.22;
-          const tapeH = 34;
-          drawWashiTape(ctx, slot.x + tapeW * 0.45, slot.y + 4, tapeW, tapeH, -7);
-          drawWashiTape(ctx, slot.x + slot.width - tapeW * 0.45, slot.y + 4, tapeW, tapeH, 7);
-        }
       } catch (err) {
         console.error('Failed to load image for slot', i, err);
       }
@@ -336,7 +328,7 @@ export async function renderPhotostrip({
     }
   }
 
-  // 5. Clean Sans-serif Watermark Frame according to watermarkPosition
+  // 4. Clean Sans-serif Watermark Frame according to watermarkPosition
   const displayDate = dateString || new Date().toISOString().slice(0, 10).replace(/-/g, '.');
 
   if (watermarkPosition === 'top') {
@@ -372,7 +364,7 @@ export async function renderPhotostrip({
     ctx.restore();
 
   } else if (watermarkPosition === 'side') {
-    // Elegant vertical watermark along the right boundary
+    // Vertical watermark along the right boundary
     ctx.save();
     ctx.translate(canvasWidth - 36, canvasHeight / 2);
     ctx.rotate(Math.PI / 2);
@@ -430,6 +422,11 @@ export async function renderPhotostrip({
       ctx.fillRect(barcodeStart + (b * 6), barcodeY - (height / 2), isThick ? barWidth * 1.6 : barWidth, height);
     }
     ctx.restore();
+  }
+
+  // 5. Apply Analog Film Grain if enabled
+  if (enableFilmGrain) {
+    applyFilmGrain(ctx, canvasWidth, canvasHeight, frameColor.isLight);
   }
 
   return canvas.toDataURL('image/png', 1.0);

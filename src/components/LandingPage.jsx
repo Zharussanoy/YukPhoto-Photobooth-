@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Camera, ChevronRight, Check, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { Camera, ChevronRight, Check, SlidersHorizontal } from 'lucide-react';
 import { FRAME_LAYOUTS, PHOTO_FILTERS } from '../utils/filters';
 import { playPopSound } from '../utils/audio';
 
@@ -27,7 +27,7 @@ export default function LandingPage({ selectedLayout, onSelectLayout, onStart })
     const rotateY = ((x - centerX) / centerX) * 10;  // Tilt left/right
 
     setTiltStyle({
-      transform: `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) rotateZ(-1.5deg) scale3d(1.02, 1.02, 1.02)`,
+      transform: `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) rotateZ(-2deg) scale3d(1.02, 1.02, 1.02)`,
       transition: 'transform 0.1s ease-out',
     });
   };
@@ -57,9 +57,14 @@ export default function LandingPage({ selectedLayout, onSelectLayout, onStart })
   return (
     <div className="relative min-h-[calc(100vh-70px)] flex flex-col justify-between overflow-hidden font-sans">
 
-      {/* Ambient background lighting */}
-      <div className="absolute top-1/4 left-1/4 w-[450px] h-[350px] bg-blue-600/[0.08] blur-[140px] rounded-full pointer-events-none -z-10" />
-      <div className="absolute bottom-10 right-1/4 w-[400px] h-[300px] bg-sky-600/[0.06] blur-[120px] rounded-full pointer-events-none -z-10" />
+      {/* Subtle ultra-thin transparent background grid pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#33415512_1px,transparent_1px),linear-gradient(to_bottom,#33415512_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none -z-10" />
+
+      {/* Ambient Glow Background Elements (Radial gradient Electric Blue / Indigo with ultra-smooth blur-3xl) */}
+      <div className="absolute -top-32 -left-32 w-[520px] h-[520px] bg-gradient-to-br from-blue-600/[0.14] to-indigo-600/[0.08] blur-3xl rounded-full pointer-events-none -z-10" />
+      <div className="absolute top-1/4 -left-16 w-[420px] h-[420px] bg-sky-600/[0.08] blur-3xl rounded-full pointer-events-none -z-10" />
+      <div className="absolute top-1/4 right-0 lg:right-12 w-[560px] h-[560px] bg-gradient-to-tr from-blue-600/[0.16] via-indigo-500/[0.12] to-sky-400/[0.06] blur-3xl rounded-full pointer-events-none -z-10" />
+      <div className="absolute bottom-10 right-1/4 w-[420px] h-[420px] bg-blue-700/[0.07] blur-3xl rounded-full pointer-events-none -z-10" />
 
       {/* Main Container - 2 Column Clean Hero */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 w-full my-auto">
@@ -111,10 +116,11 @@ export default function LandingPage({ selectedLayout, onSelectLayout, onStart })
                       type="button"
                       onClick={() => handleSelect(layout)}
                       data-cursor-hover="true"
-                      className={`relative p-3 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between ${isSelected
+                      className={`relative p-3 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between ${
+                        isSelected
                           ? 'bg-blue-950/50 border-blue-500 shadow-sm ring-1 ring-blue-500/60'
                           : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-850'
-                        }`}
+                      }`}
                     >
                       {/* Active indicator check */}
                       {isSelected && (
@@ -124,8 +130,9 @@ export default function LandingPage({ selectedLayout, onSelectLayout, onStart })
                       )}
 
                       <div>
-                        <span className={`block font-sans font-bold text-xs sm:text-sm mb-0.5 ${isSelected ? 'text-blue-200' : 'text-slate-200'
-                          }`}>
+                        <span className={`block font-sans font-bold text-xs sm:text-sm mb-0.5 ${
+                          isSelected ? 'text-blue-200' : 'text-slate-200'
+                        }`}>
                           {layout.name}
                         </span>
                         <span className="text-[11px] text-slate-400 font-medium">
@@ -154,7 +161,7 @@ export default function LandingPage({ selectedLayout, onSelectLayout, onStart })
 
           </div>
 
-          {/* RIGHT COLUMN: Aesthetic 3-Strip Photo Mockup with 3D Parallax Tilt & Live Filter Switcher */}
+          {/* RIGHT COLUMN: Polished Mockup Photo Strip with Parallax Tilt & Glowing Shadow */}
           <div className="lg:col-span-5 flex flex-col items-center justify-center py-4 select-none">
 
             <div
@@ -165,11 +172,8 @@ export default function LandingPage({ selectedLayout, onSelectLayout, onStart })
               className="relative group cursor-pointer will-change-transform"
             >
 
-              {/* Ambient backlight glow */}
-              <div className="absolute -inset-2 bg-gradient-to-tr from-blue-600/20 to-sky-400/10 rounded-3xl blur-2xl opacity-60 group-hover:opacity-90 transition duration-500" />
-
-              {/* The 3-Strip Photobooth Mock-up Card */}
-              <div className="relative w-[260px] sm:w-[290px] rounded-2xl bg-[#0B1120] border border-slate-800 p-3.5 sm:p-4 photostrip-shadow">
+              {/* Polished Floating Mock-up Card with Subtle Tilt, Shadow-2xl & Fine Border */}
+              <div className="relative w-[260px] sm:w-[290px] rounded-2xl bg-[#0B1120] border border-slate-800/80 p-3.5 sm:p-4 shadow-2xl shadow-blue-500/10 photostrip-shadow">
                 
                 {/* Thin inner decorative frame line */}
                 <div className="absolute inset-1.5 border border-white/10 rounded-xl pointer-events-none" />

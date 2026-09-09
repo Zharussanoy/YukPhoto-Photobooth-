@@ -86,7 +86,8 @@ export default function App() {
             initialColorId={editorData?.frameColorId || 'navy'}
             initialCustomColor={editorData?.customColor || '#2563EB'}
             initialPatternId={editorData?.framePatternId || 'none'}
-            initialShowTape={editorData?.showTape ?? true}
+            initialFramePadding={editorData?.framePadding || 'standard'}
+            initialEnableFilmGrain={editorData?.enableFilmGrain || false}
             initialWatermarkPosition={editorData?.watermarkPosition || 'bottom'}
             initialCaption={editorData?.caption || 'STUDIO MEMORIES'}
             initialDate={editorData?.dateString || ''}

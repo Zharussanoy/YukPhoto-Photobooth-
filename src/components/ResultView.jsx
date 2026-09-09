@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { QRCodeSVG } from 'qrcode.react';
 import { 
   Download, 
-  QrCode, 
   RotateCcw, 
   SlidersHorizontal, 
   Check, 
@@ -20,7 +18,6 @@ export default function ResultView({
 }) {
   const [renderedImageUrl, setRenderedImageUrl] = useState(null);
   const [isRendering, setIsRendering] = useState(true);
-  const [showQrModal, setShowQrModal] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
   // Generate high-resolution canvas render on mount
@@ -37,7 +34,8 @@ export default function ResultView({
           frameColorId: editorData.frameColorId,
           customColor: editorData.customColor,
           framePatternId: editorData.framePatternId,
-          showTape: editorData.showTape ?? true,
+          framePadding: editorData.framePadding || 'standard',
+          enableFilmGrain: editorData.enableFilmGrain || false,
           watermarkPosition: editorData.watermarkPosition || 'bottom',
           caption: editorData.caption,
           dateString: editorData.dateString,
@@ -139,7 +137,7 @@ export default function ResultView({
           Ini Dia Hasil Fotomu!
         </h2>
         <p className="text-sm text-slate-400 mt-2 max-w-md mx-auto">
-          Strip fotomu sudah siap dalam resolusi tinggi. Unduh ke perangkatmu atau scan QR code untuk dibuka di smartphone.
+          Strip fotomu sudah siap dalam resolusi tinggi 300 DPI. Unduh langsung ke perangkatmu atau simpan ke clipboard.
         </p>
       </div>
 
@@ -153,7 +151,7 @@ export default function ResultView({
               <div className="aspect-[1/2] rounded-3xl bg-slate-900/60 border border-slate-800 flex flex-col items-center justify-center p-8 text-center animate-pulse">
                 <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
                 <p className="font-bold text-sm text-white">Merender Kualitas Tinggi...</p>
-                <p className="text-xs text-slate-400 mt-1">Menerapkan warna, pola motif & stempel ke kanvas 300 DPI</p>
+                <p className="text-xs text-slate-400 mt-1">Menerapkan warna, pola bingkai & filter ke kanvas resolusi tinggi</p>
               </div>
             ) : (
               <div className="relative rounded-2xl overflow-hidden photostrip-shadow border border-slate-800 bg-black/40 backdrop-blur-md">
@@ -191,7 +189,7 @@ export default function ResultView({
           {/* Main Download Card */}
           <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
             <h3 className="font-sans font-bold text-lg text-white">
-              Opsi Simpan & Bagikan
+              Opsi Simpan
             </h3>
 
             {/* Big Download Button */}
@@ -205,24 +203,11 @@ export default function ResultView({
               <span>Download Foto (PNG)</span>
             </button>
 
-            {/* QR Code Button */}
-            <button
-              onClick={() => {
-                playPopSound();
-                setShowQrModal(true);
-              }}
-              disabled={isRendering}
-              className="w-full py-3.5 px-5 rounded-xl glass-button text-white font-medium text-sm flex items-center justify-center gap-2"
-            >
-              <QrCode className="w-4 h-4 text-blue-400" strokeWidth={1.75} />
-              <span>Tampilkan QR Code HP</span>
-            </button>
-
             {/* Copy to Clipboard */}
             <button
               onClick={handleCopyImage}
               disabled={isRendering}
-              className="w-full py-3 px-4 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 text-slate-300 text-xs font-medium flex items-center justify-center gap-2 transition-all"
+              className="w-full py-3.5 px-4 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 text-slate-300 text-sm font-medium flex items-center justify-center gap-2 transition-all"
             >
               {isCopied ? (
                 <>
@@ -268,53 +253,6 @@ export default function ResultView({
         </div>
 
       </div>
-
-      {/* QR Code Modal */}
-      {showQrModal && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn"
-          onClick={() => setShowQrModal(false)}
-        >
-          <div 
-            className="glass-panel max-w-sm w-full p-6 sm:p-8 rounded-3xl border border-slate-700 text-center shadow-2xl space-y-5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="inline-flex p-3 rounded-2xl bg-blue-500/20 text-blue-300 border border-blue-500/30">
-              <QrCode className="w-6 h-6" strokeWidth={1.75} />
-            </div>
-
-            <div>
-              <h3 className="font-sans font-bold text-xl text-white">
-                Scan QR Code di HP
-              </h3>
-              <p className="text-xs text-slate-400 mt-1">
-                Arahkan kamera smartphone kamu ke QR code ini untuk melihat & mengunduh foto strip.
-              </p>
-            </div>
-
-            {/* QR Code Canvas */}
-            <div className="p-4 bg-white rounded-2xl inline-block shadow-xl">
-              <QRCodeSVG
-                value={window.location.href}
-                size={180}
-                level="M"
-                includeMargin={false}
-              />
-            </div>
-
-            <p className="text-[11px] text-slate-400">
-              Menghubungkan ke studio yukphoto lokal kamu.
-            </p>
-
-            <button
-              onClick={() => setShowQrModal(false)}
-              className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors"
-            >
-              Tutup
-            </button>
-          </div>
-        </div>
-      )}
 
     </div>
   );
