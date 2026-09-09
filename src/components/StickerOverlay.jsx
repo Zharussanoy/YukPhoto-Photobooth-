@@ -107,8 +107,8 @@ export default function StickerOverlay({
             {/* The Emoji Sticker */}
             <div
               style={{ fontSize: `${size}px`, lineHeight: 1 }}
-              className={`p-1.5 transition-transform duration-150 drop-shadow-lg ${isSelected
-                  ? 'ring-2 ring-purple-400/80 bg-purple-500/20 rounded-2xl backdrop-blur-[2px]'
+              className={`p-1.5 transition-transform duration-150 drop-shadow-md select-none ${isSelected
+                  ? 'ring-2 ring-blue-400 bg-blue-500/25 rounded-2xl backdrop-blur-[2px] scale-105'
                   : 'hover:scale-110'
                 }`}
             >
@@ -118,44 +118,50 @@ export default function StickerOverlay({
             {/* Controls popup when selected */}
             {isSelected && (
               <div
-                className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-1 p-1 rounded-xl bg-black/90 backdrop-blur-md border border-white/20 shadow-xl z-30"
-                style={{ transform: `translateX(-50%) rotate(${-rotation}deg)` }} // keep controls right side up
+                className={`absolute left-1/2 flex items-center gap-1 p-1 rounded-xl bg-slate-950/95 backdrop-blur-md border border-slate-700 shadow-2xl z-30 ${
+                  sticker.yPercent < 15 ? 'top-full mt-2' : '-top-11'
+                }`}
+                style={{ transform: `translateX(-50%) rotate(${-rotation}deg)` }} // keep controls upright
                 onClick={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
               >
                 {/* Rotate button */}
                 <button
+                  type="button"
                   onClick={(e) => handleRotate(e, sticker)}
                   title="Putar Stiker"
-                  className="p-1 rounded hover:bg-white/20 text-purple-300 transition-colors"
+                  className="p-1 rounded-lg hover:bg-slate-800 text-blue-400 active:scale-95 transition-all"
                 >
                   <RotateCw className="w-3.5 h-3.5" />
                 </button>
 
                 {/* Smaller */}
                 <button
+                  type="button"
                   onClick={(e) => handleResize(e, sticker, -6)}
                   title="Perkecil"
-                  className="p-1 rounded hover:bg-white/20 text-slate-200 transition-colors"
+                  className="p-1 rounded-lg hover:bg-slate-800 text-slate-200 active:scale-95 transition-all"
                 >
-                  <Minus className="w-3 h-3" />
+                  <Minus className="w-3.5 h-3.5" />
                 </button>
 
                 {/* Larger */}
                 <button
+                  type="button"
                   onClick={(e) => handleResize(e, sticker, 6)}
                   title="Perbesar"
-                  className="p-1 rounded hover:bg-white/20 text-slate-200 transition-colors"
+                  className="p-1 rounded-lg hover:bg-slate-800 text-slate-200 active:scale-95 transition-all"
                 >
-                  <Plus className="w-3 h-3" />
+                  <Plus className="w-3.5 h-3.5" />
                 </button>
 
                 {/* Delete button */}
                 <button
+                  type="button"
                   onClick={(e) => handleDelete(e, sticker.id)}
                   title="Hapus Stiker"
-                  className="p-1 rounded hover:bg-rose-500/30 text-rose-400 transition-colors"
+                  className="p-1 rounded-lg hover:bg-rose-500/20 text-rose-400 active:scale-95 transition-all ml-0.5"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>

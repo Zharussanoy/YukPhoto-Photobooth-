@@ -4,32 +4,74 @@ export const PHOTO_FILTERS = [
   {
     id: 'normal',
     name: 'Normal',
-    description: 'Warna natural kamera',
+    description: 'Warna natural kamera jernih',
     cssFilter: 'none',
     canvasFilter: 'none',
   },
   {
-    id: 'bw',
-    name: 'B & W',
-    description: 'Monokrom klasik kontras tinggi',
-    cssFilter: 'grayscale(100%) contrast(120%) brightness(102%)',
-    canvasFilter: 'grayscale(100%) contrast(1.2) brightness(1.02)',
+    id: 'grayscale',
+    name: 'Grayscale',
+    description: 'Monokrom hitam-putih artistik',
+    cssFilter: 'grayscale(100%) contrast(115%) brightness(102%)',
+    canvasFilter: 'grayscale(100%) contrast(1.15) brightness(1.02)',
   },
   {
-    id: 'vintage',
-    name: 'Vintage',
-    description: 'Tone hangat analog film 35mm',
-    cssFilter: 'sepia(40%) contrast(110%) brightness(102%) saturate(115%)',
-    canvasFilter: 'sepia(40%) contrast(1.1) brightness(1.02) saturate(1.15)',
+    id: 'sepia',
+    name: 'Sepia',
+    description: 'Nuansa nostalgia hangat ala foto analog klasik',
+    cssFilter: 'sepia(65%) contrast(108%) brightness(102%) saturate(115%)',
+    canvasFilter: 'sepia(65%) contrast(1.08) brightness(1.02) saturate(1.15)',
   },
   {
-    id: 'cyberblue',
-    name: 'Cyber Blue',
-    description: 'Cool tone bayangan biru elektrik',
-    cssFilter: 'contrast(125%) saturate(130%) hue-rotate(185deg) brightness(105%)',
-    canvasFilter: 'contrast(1.25) saturate(1.3) hue-rotate(185deg) brightness(1.05)',
+    id: 'soft-pink',
+    name: 'Soft Pink / Warm',
+    description: 'Tone lembut hangat merona manis & glowing',
+    cssFilter: 'sepia(22%) saturate(135%) hue-rotate(325deg) brightness(106%) contrast(102%)',
+    canvasFilter: 'sepia(22%) saturate(1.35) hue-rotate(325deg) brightness(1.06) contrast(1.02)',
+  },
+  {
+    id: 'cold-cyber',
+    name: 'Cold / Cyber',
+    description: 'Cool tone bernuansa futuristik & biru neon',
+    cssFilter: 'contrast(120%) saturate(130%) hue-rotate(185deg) brightness(104%)',
+    canvasFilter: 'contrast(1.2) saturate(1.3) hue-rotate(185deg) brightness(1.04)',
   },
 ];
+
+// Koleksi galeri stiker imut per kategori
+export const STICKER_CATEGORIES = [
+  {
+    id: 'cute',
+    name: 'Cute / Expressive',
+    icon: '🧸',
+    stickers: ['🧸', '🎀', '🌸', '👑', '🍼', '🍭', '🎈', '🥳', '🥺', '🥰', '🤩', '😜', '🫠', '👼', '👻', '💫', '🧁', '💖'],
+  },
+  {
+    id: 'love',
+    name: 'Love / Beauty',
+    icon: '💖',
+    stickers: ['💖', '💕', '💗', '💓', '💘', '💌', '💐', '🌷', '🌹', '💄', '💋', '💍', '🪞', '👠', '💅', '💝', '🫶', '🕊️'],
+  },
+  {
+    id: 'animals',
+    name: 'Animals',
+    icon: '🐱',
+    stickers: ['🐱', '🐶', '🐰', '🐻', '🐼', '🦊', '🐥', '🐸', '🦄', '🦋', '🐝', '🐨', '🐧', '🐾', '🐹', '🐣', '🦭', '🦔'],
+  },
+  {
+    id: 'sparkles',
+    name: 'Sparkles / Vibe',
+    icon: '✨',
+    stickers: ['✨', '⭐️', '🌟', '⚡', '☁️', '🌈', '🌙', '☀️', '🔥', '💤', '💿', '🎸', '🫧', '🔮', '💎', '🎆', '🪐', '🕶️'],
+  },
+  {
+    id: 'food',
+    name: 'Food & Treats',
+    icon: '🍒',
+    stickers: ['🍒', '🍓', '🍦', '🍰', '🍩', '🍫', '🧋', '🍿', '🍪', '🥞', '🍕', '🥑', '🍇', '🎂', '🍉', '☕', '🎨'],
+  },
+];
+
 
 // Seksi 1: Warna Dasar Frame (Color Palette Selector)
 export const FRAME_COLORS = [

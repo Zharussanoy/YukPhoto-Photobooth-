@@ -83,6 +83,7 @@ export default function App() {
             onProceedToResult={handleProceedToResult}
             onRetake={handleRetakePhotos}
             initialFilter={editorData?.filterId || 'normal'}
+            initialStickers={editorData?.stickers || []}
             initialColorId={editorData?.frameColorId || 'navy'}
             initialCustomColor={editorData?.customColor || '#2563EB'}
             initialPatternId={editorData?.framePatternId || 'none'}

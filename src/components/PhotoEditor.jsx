@@ -14,10 +14,16 @@ import {
   Square,
   AlignVerticalJustifyStart,
   AlignVerticalJustifyEnd,
-  AlignHorizontalJustifyCenter
+  AlignHorizontalJustifyCenter,
+  Smile,
+  Sparkles,
+  Trash2,
+  Plus,
+  Minus
 } from 'lucide-react';
-import { PHOTO_FILTERS, FRAME_COLORS, FRAME_PATTERNS } from '../utils/filters';
+import { PHOTO_FILTERS, FRAME_COLORS, FRAME_PATTERNS, STICKER_CATEGORIES } from '../utils/filters';
 import { playPopSound } from '../utils/audio';
+import StickerOverlay from './StickerOverlay';
 
 function getLuminance(hex) {
   if (!hex) return 0;
@@ -34,6 +40,7 @@ export default function PhotoEditor({
   onProceedToResult,
   onRetake,
   initialFilter = 'normal',
+  initialStickers = [],
   initialColorId = 'navy',
   initialCustomColor = '#2563EB',
   initialPatternId = 'none',
@@ -47,7 +54,7 @@ export default function PhotoEditor({
   const colorInputRef = useRef(null);
 
   // Editor States
-  const [activeTab, setActiveTab] = useState('frames'); // 'frames' | 'filters' | 'text'
+  const [activeTab, setActiveTab] = useState('frames'); // 'frames' | 'filters' | 'stickers' | 'text'
   const [selectedFilter, setSelectedFilter] = useState(initialFilter);
   const [selectedColorId, setSelectedColorId] = useState(initialColorId);
   const [customColor, setCustomColor] = useState(initialCustomColor);
@@ -59,6 +66,11 @@ export default function PhotoEditor({
   const [dateString, setDateString] = useState(
     initialDate || new Date().toISOString().slice(0, 10).replace(/-/g, '.')
   );
+
+  // Stickers State
+  const [stickers, setStickers] = useState(initialStickers);
+  const [selectedStickerId, setSelectedStickerId] = useState(null);
+  const [activeStickerCategory, setActiveStickerCategory] = useState('cute');
 
   // Compute resolved color object (Preset vs Custom)
   const isCustomColor = selectedColorId === 'custom';
@@ -80,12 +92,61 @@ export default function PhotoEditor({
   }
 
   const currentPatternObj = FRAME_PATTERNS.find((p) => p.id === selectedPatternId) || FRAME_PATTERNS[0];
-  const currentFilterObj = PHOTO_FILTERS.find((f) => f.id === selectedFilter) || PHOTO_FILTERS[0];
+  const currentFilterObj =
+    PHOTO_FILTERS.find((f) => f.id === selectedFilter) ||
+    (selectedFilter === 'bw' ? PHOTO_FILTERS.find((f) => f.id === 'grayscale') : null) ||
+    (selectedFilter === 'vintage' ? PHOTO_FILTERS.find((f) => f.id === 'sepia') : null) ||
+    (selectedFilter === 'cyberblue' ? PHOTO_FILTERS.find((f) => f.id === 'cold-cyber') : null) ||
+    PHOTO_FILTERS[0];
+
+  const selectedSticker = stickers.find((s) => s.id === selectedStickerId);
 
   const handleCustomColorChange = (e) => {
     const newHex = e.target.value;
     setCustomColor(newHex);
     setSelectedColorId('custom');
+  };
+
+  // Sticker Handlers
+  const handleAddSticker = (emoji) => {
+    playPopSound();
+    const newId = 'stk_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    const count = stickers.length;
+    const offsetX = ((count % 4) - 1.5) * 8;
+    const offsetY = (Math.floor(count / 4) % 3 - 1) * 8;
+
+    const newSticker = {
+      id: newId,
+      emoji,
+      xPercent: Math.min(80, Math.max(20, 50 + offsetX)),
+      yPercent: Math.min(80, Math.max(20, 48 + offsetY)),
+      size: 48,
+      rotation: 0,
+    };
+
+    setStickers((prev) => [...prev, newSticker]);
+    setSelectedStickerId(newId);
+  };
+
+  const handleUpdateSticker = (id, updates) => {
+    setStickers((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
+    );
+  };
+
+  const handleRemoveSticker = (id) => {
+    playPopSound();
+    setStickers((prev) => prev.filter((s) => s.id !== id));
+    if (selectedStickerId === id) setSelectedStickerId(null);
+  };
+
+  const handleClearAllStickers = () => {
+    playPopSound();
+    if (stickers.length === 0) return;
+    if (window.confirm('Hapus semua stiker dari strip fotomu?')) {
+      setStickers([]);
+      setSelectedStickerId(null);
+    }
   };
 
   const handleFinish = () => {
@@ -94,6 +155,7 @@ export default function PhotoEditor({
       photos,
       layout,
       filterId: selectedFilter,
+      stickers,
       frameColorId: selectedColorId,
       customColor: isCustomColor ? customColor : null,
       framePatternId: selectedPatternId,
@@ -164,11 +226,12 @@ export default function PhotoEditor({
             {/* The Actual Styled Photostrip (Base Color + Pattern Overlay + Frame Padding) */}
             <div
               ref={stripRef}
+              onClick={() => setSelectedStickerId(null)}
               style={{
                 backgroundColor: currentColorObj.hex,
                 color: currentColorObj.text,
               }}
-              className={`relative w-full rounded-2xl ${paddingClasses} transition-all duration-300 photostrip-shadow overflow-hidden flex flex-col justify-between`}
+              className={`relative w-full rounded-2xl ${paddingClasses} transition-all duration-300 photostrip-shadow overflow-hidden flex flex-col justify-between cursor-default`}
             >
               {/* Pattern Overlay: Checkered */}
               {selectedPatternId === 'checkered' && (
@@ -332,6 +395,16 @@ export default function PhotoEditor({
                 </div>
               )}
 
+              {/* Dynamic Draggable / Resizable Stickers Overlay */}
+              <StickerOverlay
+                stickers={stickers}
+                selectedStickerId={selectedStickerId}
+                onSelectSticker={setSelectedStickerId}
+                onUpdateSticker={handleUpdateSticker}
+                onRemoveSticker={handleRemoveSticker}
+                containerRef={stripRef}
+              />
+
             </div>
 
           </div>
@@ -371,6 +444,26 @@ export default function PhotoEditor({
               >
                 <Wand2 className="w-3.5 h-3.5" strokeWidth={1.75} />
                 <span>Filter Foto</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  playPopSound();
+                  setActiveTab('stickers');
+                }}
+                className={`flex-1 min-w-[90px] py-2 px-3 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
+                  activeTab === 'stickers'
+                    ? 'bg-blue-600 text-white shadow-sm font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                }`}
+              >
+                <Smile className="w-3.5 h-3.5" strokeWidth={1.75} />
+                <span>Stiker Imut</span>
+                {stickers.length > 0 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/20 text-white font-bold leading-none">
+                    {stickers.length}
+                  </span>
+                )}
               </button>
 
               <button
@@ -715,17 +808,26 @@ export default function PhotoEditor({
             {activeTab === 'filters' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-sans font-semibold text-sm text-white">
-                    Pilih Filter Estetik
-                  </h3>
-                  <span className="text-xs text-blue-400 font-medium">
+                  <div>
+                    <h3 className="font-sans font-semibold text-sm text-white">
+                      Pilih Filter Real-Time
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      Ubah suasana strip fotomu secara seketika dengan sentuhan warna estetik
+                    </p>
+                  </div>
+                  <span className="text-xs text-blue-400 font-semibold px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20">
                     Aktif: {currentFilterObj.name}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                   {PHOTO_FILTERS.map((f) => {
-                    const isSelected = selectedFilter === f.id;
+                    const isSelected =
+                      selectedFilter === f.id ||
+                      (selectedFilter === 'bw' && f.id === 'grayscale') ||
+                      (selectedFilter === 'vintage' && f.id === 'sepia') ||
+                      (selectedFilter === 'cyberblue' && f.id === 'cold-cyber');
                     const sampleImg = photos[0] || '';
 
                     return (
@@ -746,7 +848,7 @@ export default function PhotoEditor({
                             src={sampleImg}
                             alt={f.name}
                             style={{ filter: f.cssFilter }}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                           />
                           {isSelected && (
                             <div className="absolute top-1.5 right-1.5 p-1 rounded-full bg-blue-600 text-white shadow">
@@ -764,6 +866,196 @@ export default function PhotoEditor({
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            )}
+
+            {/* TAB CONTENT: 3. Stiker Imut */}
+            {activeTab === 'stickers' && (
+              <div className="space-y-5">
+                {/* Header & Category Selection */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h3 className="font-sans font-semibold text-sm text-white flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-blue-500" />
+                        <span>Galeri Stiker Imut Lengkap</span>
+                      </h3>
+                      <p className="text-xs text-slate-400">
+                        Pilih stiker di bawah ini untuk ditempelkan ke foto. Geser, ubah ukuran, putar, atau hapus sesukamu!
+                      </p>
+                    </div>
+                    {stickers.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearAllStickers}
+                        className="text-xs px-2.5 py-1 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 flex items-center gap-1.5 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Hapus Semua ({stickers.length})</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Category Pills */}
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1 mb-3 scrollbar-thin">
+                    {STICKER_CATEGORIES.map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => {
+                          playPopSound();
+                          setActiveStickerCategory(cat.id);
+                        }}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap flex items-center gap-1.5 transition-all ${
+                          activeStickerCategory === cat.id
+                            ? 'bg-blue-600 text-white shadow-sm font-semibold ring-2 ring-blue-500/40'
+                            : 'bg-slate-950/80 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-900'
+                        }`}
+                      >
+                        <span className="text-sm">{cat.icon}</span>
+                        <span>{cat.name}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Stickers Grid */}
+                  <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800">
+                    <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-9 gap-2">
+                      {(STICKER_CATEGORIES.find((c) => c.id === activeStickerCategory)?.stickers || []).map(
+                        (emoji, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => handleAddSticker(emoji)}
+                            title={`Tambah stiker ${emoji}`}
+                            className="aspect-square flex items-center justify-center text-2xl sm:text-3xl rounded-xl bg-slate-900/60 hover:bg-blue-500/20 hover:scale-125 border border-transparent hover:border-blue-500/40 active:scale-95 transition-all select-none"
+                          >
+                            {emoji}
+                          </button>
+                        )
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Selected Sticker Controls Panel (if any sticker is selected) */}
+                {selectedSticker && (
+                  <div className="p-4 rounded-2xl bg-blue-950/30 border border-blue-500/30 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-3xl select-none">{selectedSticker.emoji}</span>
+                        <div>
+                          <span className="text-xs font-bold text-white block">
+                            Stiker Terpilih
+                          </span>
+                          <span className="text-[11px] text-blue-300 block">
+                            Atur ukuran & rotasi stiker aktif
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSticker(selectedSticker.id)}
+                        className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs flex items-center gap-1 transition-all"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Hapus Stiker</span>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      {/* Size slider & buttons */}
+                      <div>
+                        <div className="flex justify-between text-xs text-slate-300 mb-1">
+                          <span>Ukuran:</span>
+                          <span className="font-mono text-blue-400 font-semibold">{selectedSticker.size || 48}px</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleUpdateSticker(selectedSticker.id, {
+                                size: Math.max(24, (selectedSticker.size || 48) - 6),
+                              })
+                            }
+                            className="p-1 rounded-lg bg-slate-900 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700"
+                          >
+                            <Minus className="w-3.5 h-3.5" />
+                          </button>
+                          <input
+                            type="range"
+                            min="24"
+                            max="110"
+                            value={selectedSticker.size || 48}
+                            onChange={(e) =>
+                              handleUpdateSticker(selectedSticker.id, { size: Number(e.target.value) })
+                            }
+                            className="flex-1 accent-blue-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleUpdateSticker(selectedSticker.id, {
+                                size: Math.min(110, (selectedSticker.size || 48) + 6),
+                              })
+                            }
+                            className="p-1 rounded-lg bg-slate-900 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Rotation slider */}
+                      <div>
+                        <div className="flex justify-between text-xs text-slate-300 mb-1">
+                          <span>Rotasi:</span>
+                          <span className="font-mono text-blue-400 font-semibold">{selectedSticker.rotation || 0}°</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="range"
+                            min="0"
+                            max="360"
+                            step="5"
+                            value={selectedSticker.rotation || 0}
+                            onChange={(e) =>
+                              handleUpdateSticker(selectedSticker.id, { rotation: Number(e.target.value) })
+                            }
+                            className="flex-1 accent-blue-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleUpdateSticker(selectedSticker.id, {
+                                rotation: ((selectedSticker.rotation || 0) + 45) % 360,
+                              })
+                            }
+                            title="Putar 45°"
+                            className="px-2 py-0.5 rounded-lg bg-slate-900 text-blue-400 hover:text-white border border-slate-800 hover:border-slate-700 text-xs font-mono"
+                          >
+                            +45°
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Interactive Tips Banner */}
+                <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 flex items-start gap-3 text-xs text-slate-400">
+                  <span className="text-xl">✨</span>
+                  <div className="space-y-0.5">
+                    <p className="font-semibold text-slate-200">
+                      Cara Mengatur Stiker:
+                    </p>
+                    <p className="leading-relaxed">
+                      1. Klik salah satu emotikon di atas untuk menambahkannya ke photostrip.<br />
+                      2. Tarik / geser (drag & drop) stiker langsung ke posisi yang kamu sukai.<br />
+                      3. Klik stiker untuk menampilkan toolbar mini: putar, perkecil, perbesar, atau hapus.
+                    </p>
+                  </div>
                 </div>
               </div>
             )}

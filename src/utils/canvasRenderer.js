@@ -170,6 +170,7 @@ export async function renderPhotostrip({
   photos,
   layout,
   filterId,
+  stickers = [],
   frameColorId = 'navy',
   customColor = null,
   framePatternId = 'none',
@@ -211,7 +212,11 @@ export async function renderPhotostrip({
     else resolvedPatternId = 'none';
   }
 
-  const filter = PHOTO_FILTERS.find((f) => f.id === filterId) || PHOTO_FILTERS[0];
+  const filter = PHOTO_FILTERS.find((f) => f.id === filterId)
+    || (filterId === 'bw' ? PHOTO_FILTERS.find((f) => f.id === 'grayscale') : null)
+    || (filterId === 'vintage' ? PHOTO_FILTERS.find((f) => f.id === 'sepia') : null)
+    || (filterId === 'cyberblue' ? PHOTO_FILTERS.find((f) => f.id === 'cold-cyber') : null)
+    || PHOTO_FILTERS[0];
 
   let canvasWidth = 1000;
   let canvasHeight = 2500;
@@ -422,6 +427,29 @@ export async function renderPhotostrip({
       ctx.fillRect(barcodeStart + (b * 6), barcodeY - (height / 2), isThick ? barWidth * 1.6 : barWidth, height);
     }
     ctx.restore();
+  }
+
+  // 4.5 Draw Stickers / Emojis (Preserving Position, Size, and Rotation)
+  if (stickers && stickers.length > 0) {
+    const scaleFactor = canvasWidth / 360; // relative to preview container width (~360px)
+    for (const sticker of stickers) {
+      if (!sticker.emoji) continue;
+      const x = (sticker.xPercent / 100) * canvasWidth;
+      const y = (sticker.yPercent / 100) * canvasHeight;
+      const fontSize = Math.round((sticker.size || 48) * scaleFactor);
+      const rot = ((sticker.rotation || 0) * Math.PI) / 180;
+
+      ctx.save();
+      ctx.translate(x, y);
+      if (rot !== 0) {
+        ctx.rotate(rot);
+      }
+      ctx.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(sticker.emoji, 0, 0);
+      ctx.restore();
+    }
   }
 
   // 5. Apply Analog Film Grain if enabled

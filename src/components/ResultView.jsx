@@ -31,6 +31,7 @@ export default function ResultView({
           photos: editorData.photos,
           layout: editorData.layout,
           filterId: editorData.filterId,
+          stickers: editorData.stickers || [],
           frameColorId: editorData.frameColorId,
           customColor: editorData.customColor,
           framePatternId: editorData.framePatternId,
